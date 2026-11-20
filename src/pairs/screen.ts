@@ -1,4 +1,4 @@
-import { button, clock, element, paragraphs, type Arcade, type GameScreen } from '../arcade'
+import { button, clock, element, howToPlay, howToPlayFold, paragraphs, type Arcade, type GameScreen, type Line, type Rule } from '../arcade'
 import { levelButtons, resultLines } from '../levels'
 import { drawKitten } from '../looks'
 import type { Look } from '../shop'
@@ -22,6 +22,13 @@ import {
 } from './engine'
 
 export const PAIRS_STORE = 'pairs'
+
+const HOW_TO_PLAY: readonly Rule[] = [
+  ['🎯', 'Goal', 'Find every pair of matching kittens. Look closely: some only differ by their hat.'],
+  ['⏱️', 'How it ends', 'You cannot lose: it is you against the clock, which starts with your first card. Your three fastest times on each level are kept.'],
+  ['🎮', 'Controls', 'Click a card to turn it. Two that do not match turn back over. P or Esc pauses, and the cards hide.'],
+  ['🪙', 'Coins', 'One per pair. Finish a level to open the next one.']
+]
 
 /** A card in room pixels: a kitten with room for the tallest hat, and a frame. */
 const TILE = { width: 20, height: 18 }
@@ -133,7 +140,7 @@ export function pairsScreen(arcade: Arcade, saved: unknown): GameScreen {
       return
     }
     const note = board.started ? 'The cards are hidden while the clock is stopped.' : 'The clock starts with your first card.'
-    showCard('Paused', [[note, 'soft']], [
+    showCard('Paused', [[note, 'soft'], howToPlayFold(HOW_TO_PLAY)], [
       button('Resume', () => setPaused(false), 'primary'),
       button('Levels', showMenu),
       button('Arcade', arcade.home)
@@ -198,11 +205,7 @@ export function pairsScreen(arcade: Arcade, saved: unknown): GameScreen {
     )
     showCard(
       'Kitten Pairs',
-      [
-        ['Turn two cards at a time and find the matching kittens.'],
-        ['The clock starts with your first card. Your three fastest times on each level are kept.', 'soft'],
-        ['Each pair is a coin.', 'soft']
-      ],
+      [howToPlay(HOW_TO_PLAY)],
       [button('Arcade', arcade.home)]
     )
   }
@@ -224,7 +227,7 @@ export function pairsScreen(arcade: Arcade, saved: unknown): GameScreen {
     card.levels.replaceChildren()
   }
 
-  function showCard(title: string, lines: readonly (readonly [string, string?])[], actions: HTMLElement[]): void {
+  function showCard(title: string, lines: readonly Line[], actions: HTMLElement[]): void {
     card.title.textContent = title
     card.body.replaceChildren(...paragraphs(lines))
     card.actions.replaceChildren(...actions)

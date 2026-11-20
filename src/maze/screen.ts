@@ -1,6 +1,6 @@
-import { button, clock, element, paragraphs, type Arcade, type GameScreen } from '../arcade'
+import { button, clock, element, howToPlay, howToPlayFold, paragraphs, type Arcade, type GameScreen, type Line, type Rule } from '../arcade'
 import { floorOf } from '../catching/engine'
-import { levelButtons, resultLines, type Line } from '../levels'
+import { levelButtons, resultLines } from '../levels'
 import { drawCentred, drawKittenHead } from '../looks'
 import { bestOf, canPlay, finishLevel, type Progress } from '../progress'
 import type { Look } from '../shop'
@@ -25,6 +25,14 @@ import {
 } from './engine'
 
 export const MAZE_STORE = 'maze'
+
+const HOW_TO_PLAY: readonly Rule[] = [
+  ['🎯', 'Goal', 'Lead your kitten from the top-left corner to its fish in the bottom-right one.'],
+  ['⏱️', 'How it ends', 'You cannot lose: it is you against the clock, which starts with your first step. Your three fastest times on each level are kept.'],
+  ['🎮', 'Controls', 'Arrows or WASD take a step; hold them to keep walking. Click a square in line with the kitten to run there. P or Esc pauses, and the maze hides.'],
+  ['🌑', 'Harder', 'From level 4 some paths loop. From level 5 the lights go out and you only see around your kitten.'],
+  ['🪙', 'Coins', 'Two per level number: level 7 is worth 14. Finish a level to open the next one.']
+]
 
 /** Holding an arrow walks on: first after a short wait, then at a steady pace. */
 const HOLD = { first: 0.22, every: 0.09 }
@@ -118,7 +126,7 @@ export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
       return
     }
     const note = maze.started ? 'The maze hides while the clock is stopped.' : 'The clock starts with your first step.'
-    showCard('Paused', [[note, 'soft']], [
+    showCard('Paused', [[note, 'soft'], howToPlayFold(HOW_TO_PLAY)], [
       button('Resume', () => setPaused(false), 'primary'),
       button('Levels', showMenu),
       button('Arcade', arcade.home)
@@ -208,12 +216,7 @@ export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
     )
     showCard(
       'Kitten Maze',
-      [
-        ['Walk your kitten from the top-left corner to its fish, as fast as you can.'],
-        ['Arrows or WASD take a step; hold them to keep walking. Click a square in line with the kitten to run there.', 'soft'],
-        ['From level 4 the paths loop, and from level 5 the lights go out: you only see around your kitten.', 'soft'],
-        ['The clock starts with your first step. Each level is always the same maze.', 'soft']
-      ],
+      [howToPlay(HOW_TO_PLAY)],
       [button('Arcade', arcade.home)],
       true
     )

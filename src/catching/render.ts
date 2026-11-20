@@ -1,10 +1,10 @@
 import { RULES, floorOf, type Game, type Hole, type Mouse } from './engine'
 import { drawKitten } from '../looks'
 import type { Look } from '../shop'
-import { CAT, MOUSE, PALETTES, drawSprite, drawText, spriteWidth } from '../sprites'
+import { CAT, MOUSE, PALETTES, drawSprite, drawText, spriteWidth, textWidth } from '../sprites'
 
-/** The "+1" that floats up where a mouse was caught. */
-export type Floater = { x: number; y: number; text: string; age: number; golden: boolean }
+/** The "+1" that floats up where a mouse was caught, or the "-♥" where one got away. */
+export type Floater = { x: number; y: number; text: string; age: number; tone: 'points' | 'golden' | 'lost' }
 
 export const FLOATER_LIFE = 0.8
 
@@ -27,7 +27,8 @@ const ROOM = {
   goldenEyes: '#ffd166',
   sparkle: '#fff7d6',
   points: '#ffffff',
-  goldenPoints: '#ffd166'
+  goldenPoints: '#ffd166',
+  lostPoints: '#ff6b81'
 } as const
 
 const PLANK_HEIGHT = 7
@@ -173,8 +174,9 @@ function drawCat(ctx: CanvasRenderingContext2D, game: Game, look: Look): void {
 
 function drawFloater(ctx: CanvasRenderingContext2D, floater: Floater): void {
   const rise = Math.round(floater.age * 14)
-  const colour = floater.golden ? ROOM.goldenPoints : ROOM.points
-  drawText(ctx, floater.text, Math.round(floater.x) - 4, Math.round(floater.y) - 10 - rise, colour)
+  const colour = { points: ROOM.points, golden: ROOM.goldenPoints, lost: ROOM.lostPoints }[floater.tone]
+  const x = Math.round(floater.x - textWidth(floater.text) / 2)
+  drawText(ctx, floater.text, x, Math.round(floater.y) - 10 - rise, colour)
 }
 
 /** The kitten after a mouse: the picture on the game's tile in the arcade, 41×20 room pixels. */

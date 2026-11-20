@@ -1,12 +1,10 @@
 // What the games played level by level against the clock show alike: the level buttons and the
 // card of a finished level.
 
-import { button, clock } from './arcade'
+import { button, clock, type Line } from './arcade'
 import { PODIUM, bestOf, canPlay, type Progress } from './progress'
 
 export const PLACES = ['1st', '2nd', '3rd'] as const
-
-export type Line = readonly [string, string?]
 
 /** One button per level: an open one says its size and best time, the rest are locked. */
 export function levelButtons(

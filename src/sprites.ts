@@ -57,16 +57,24 @@ export function drawSprite(
   })
 }
 
-// A 3×5 font with only what the floating points need.
+// A 5-pixel-tall font with only what the floating text needs: the points and a lost heart.
 const GLYPHS: Record<string, Sprite> = {
   '+': ['...', '.#.', '###', '.#.', '...'],
+  '-': ['...', '...', '###', '...', '...'],
   '1': ['.#.', '##.', '.#.', '.#.', '###'],
-  '5': ['###', '#..', '##.', '..#', '##.']
+  '5': ['###', '#..', '##.', '..#', '##.'],
+  '♥': ['.....', '##.##', '#####', '.###.', '..#..']
+}
+
+export function textWidth(text: string): number {
+  return [...text].reduce((width, char) => width + spriteWidth(GLYPHS[char] ?? ['...']) + 1, -1)
 }
 
 export function drawText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, colour: string): void {
-  ;[...text].forEach((char, index) => {
-    const glyph = GLYPHS[char]
-    if (glyph) drawSprite(ctx, glyph, { '#': colour }, x + index * 4, y)
-  })
+  let left = x
+  for (const char of text) {
+    const glyph = GLYPHS[char] ?? ['...']
+    drawSprite(ctx, glyph, { '#': colour }, left, y)
+    left += spriteWidth(glyph) + 1
+  }
 }

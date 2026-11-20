@@ -53,13 +53,45 @@ export function element<T extends HTMLElement = HTMLElement>(id: string): T {
   return found
 }
 
-export function paragraphs(lines: readonly (readonly [string, string?])[]): HTMLElement[] {
-  return lines.map(([text, className]) => {
+/** A line of text with an optional class, or an element ready to show. */
+export type Line = readonly [string, string?] | HTMLElement
+
+export function paragraphs(lines: readonly Line[]): HTMLElement[] {
+  return lines.map((item) => {
+    if (item instanceof HTMLElement) return item
+    const [text, className] = item
     const line = document.createElement('p')
     line.textContent = text
     if (className) line.className = className
     return line
   })
+}
+
+/** One rule of a game: an icon, what it is about, and the rule itself. */
+export type Rule = readonly [icon: string, label: string, text: string]
+
+/** A game's rules, shown before it starts. */
+export function howToPlay(rules: readonly Rule[]): HTMLElement {
+  const list = document.createElement('dl')
+  list.className = 'how'
+  for (const [icon, label, text] of rules) {
+    const term = document.createElement('dt')
+    term.textContent = `${icon} ${label}`
+    const detail = document.createElement('dd')
+    detail.textContent = text
+    list.append(term, detail)
+  }
+  return list
+}
+
+/** The same rules folded under "How to play", for the pause card. */
+export function howToPlayFold(rules: readonly Rule[]): HTMLElement {
+  const fold = document.createElement('details')
+  fold.className = 'how-fold'
+  const summary = document.createElement('summary')
+  summary.textContent = 'How to play'
+  fold.append(summary, howToPlay(rules))
+  return fold
 }
 
 export function button(label: string, onClick: () => void, className?: string): HTMLButtonElement {

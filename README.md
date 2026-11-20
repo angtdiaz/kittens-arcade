@@ -4,6 +4,9 @@ Pixel art games played by kittens, for [Orca](https://github.com/stablyai/orca),
 between agents. They run in a sandboxed panel in Orca's right sidebar, which asks only for its own
 storage: best scores, coins, what you bought and whether the sound is on.
 
+Each game opens with its rules under **How to play**: the goal, how it ends, the controls and the
+coins. The pause card keeps them folded, to read again without leaving.
+
 ## Catching Kittens
 
 The first game. Your kitten catches the mice that run between the holes in the wall before they
@@ -16,7 +19,8 @@ collars in the shop.
 - **Pounce:** click or Space, a short leap with a moment to cool down.
 - **Pause:** the II button at the top, P or Esc, in every game; the pause card leads back to the arcade.
   Clicking outside the panel pauses too. **Sound:** M, or Settings.
-- Three mice getting away ends the run. Mice come out faster, and more at once, as it goes on.
+- Each mouse that gets away costs one of the three hearts at the top, and a red -♥ shows where it
+  escaped; losing all three ends the run. Mice come out faster, and more at once, as it goes on.
 
 ## Kitten Pairs
 

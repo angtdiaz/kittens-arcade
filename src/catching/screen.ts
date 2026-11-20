@@ -1,10 +1,17 @@
-import { button, element, paragraphs, type Arcade, type GameScreen } from '../arcade'
-import { RULES, advance, createGame, pounce, resize, start, type GameEvent, type Input } from './engine'
+import { button, element, howToPlay, howToPlayFold, paragraphs, type Arcade, type GameScreen, type Line, type Rule } from '../arcade'
+import { RULES, advance, createGame, floorOf, pounce, resize, start, type GameEvent, type Input } from './engine'
 import { FLOATER_LIFE, drawScene, type Floater } from './render'
 
 export const CATCHING_STORE = 'best'
 /** Space right after losing should not start a new run by accident. */
 const RESTART_LOCK_MS = 700
+
+const HOW_TO_PLAY: readonly Rule[] = [
+  ['🎯', 'Goal', 'Catch the mice before they reach another hole in the wall.'],
+  ['❤️', 'How you lose', 'Each mouse that gets away costs one of the three hearts at the top. Lose all three and the run is over.'],
+  ['🎮', 'Controls', 'Move with the mouse or the arrow keys. Click or Space to pounce. P or Esc pauses.'],
+  ['🪙', 'Coins', 'One per mouse, five for a golden one. The mice get faster and come out more often as you go.']
+]
 
 const MOVES: Record<string, readonly [number, number]> = {
   ArrowLeft: [-1, 0],
@@ -50,10 +57,15 @@ export function catchingScreen(arcade: Arcade, saved: unknown): GameScreen {
   function handle(events: readonly GameEvent[]): void {
     for (const event of events) {
       if (event.type === 'caught') {
-        floaters.push({ x: event.x, y: event.y, text: `+${event.points}`, age: 0, golden: event.golden })
+        floaters.push({ x: event.x, y: event.y, text: `+${event.points}`, age: 0, tone: event.golden ? 'golden' : 'points' })
         arcade.earn(event.points)
         sound.play(event.golden ? 'golden' : 'catch')
       } else if (event.type === 'escaped') {
+        // Shown where it got away, kept on the floor so a hole in the top wall does not hide it.
+        const floor = floorOf(view.width, view.height)
+        const x = Math.min(Math.max(event.x, floor.left + 6), floor.right - 6)
+        const y = Math.min(Math.max(event.y, floor.top + 12), floor.bottom - 2)
+        floaters.push({ x, y, text: '-♥', age: 0, tone: 'lost' })
         sound.play('escape')
         shake(hud.center)
       } else if (event.type === 'over') {
@@ -108,19 +120,15 @@ export function catchingScreen(arcade: Arcade, saved: unknown): GameScreen {
     paused = value
     keys.clear()
     hud.pause.hidden = paused
-    if (paused) showCard('Paused', 'Resume', [['Your mice are waiting.', 'soft']])
+    if (paused) showCard('Paused', 'Resume', [['Your mice are waiting.', 'soft'], howToPlayFold(HOW_TO_PLAY)])
     else card.root.hidden = true
   }
 
   function showTitle(): void {
-    showCard('Catching Kittens', 'Play', [
-      ['Catch the mice before they reach another hole. If three get away, you lose.'],
-      ['Each mouse is a coin, golden ones are worth five.', 'soft'],
-      ['Move: mouse or arrows · Pounce: click or Space · Pause: P · Sound: M', 'soft']
-    ])
+    showCard('Catching Kittens', 'Play', [howToPlay(HOW_TO_PLAY)])
   }
 
-  function showCard(title: string, play: string, lines: readonly (readonly [string, string?])[]): void {
+  function showCard(title: string, play: string, lines: readonly Line[]): void {
     card.title.textContent = title
     card.body.replaceChildren(...paragraphs(lines))
     card.actions.replaceChildren(button(play, act, 'primary'), button('Arcade', arcade.home))
