@@ -2,7 +2,7 @@
 // look, the coins, the sound and storage.
 
 import type { JsonValue } from 'orca'
-import type { Look } from './shop'
+import type { Look, Wardrobe } from './shop'
 import type { Sound } from './sound'
 
 export type View = {
@@ -25,6 +25,9 @@ export type Arcade = {
   hud: Hud
   sound: Sound
   look(): Look
+  wardrobe(): Wardrobe
+  saveWardrobe(): void
+  openShop(tab: 'coats' | 'accessories' | 'home'): void
   earn(coins: number): void
   keep(key: string, value: JsonValue): void
   home(): void

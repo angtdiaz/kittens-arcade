@@ -2,6 +2,9 @@ import type { JsonValue } from 'orca'
 import { element, type Arcade, type GameScreen, type View } from './arcade'
 import { paintCatchingArt, paintRoom } from './catching/render'
 import { CATCHING_STORE, catchingScreen } from './catching/screen'
+import { drawPreview } from './home/art'
+import { FURNITURE, KINDS, SPOTS_OF, TREAT_PRICE, type Furniture, type Spot } from './home/catalog'
+import { homeScreen } from './home/screen'
 import { HAT_ROOM, drawKitten } from './looks'
 import { MAZE_STORE, mazeScreen, paintMazeArt } from './maze/screen'
 import { PAIRS_STORE, paintPairsArt, pairsScreen } from './pairs/screen'
@@ -9,10 +12,14 @@ import {
   ACCESSORIES,
   COATS,
   buy,
+  buyTreat,
   earn,
   isWorn,
   newWardrobe,
   parseWardrobe,
+  place,
+  removeFrom,
+  spotOf,
   takeOff,
   tryOn,
   wear,
@@ -32,8 +39,9 @@ const WALL_HEIGHT = 26
 const MAX_FRAME_SECONDS = 0.25
 const PREVIEW = { width: spriteWidth(CAT.walkA) + 4, height: CAT.walkA.length + HAT_ROOM + 1 }
 const ART = { width: 41, height: 20 }
+const FURNITURE_PREVIEW = { width: 28, height: 28 }
 
-type Tab = 'coats' | 'accessories'
+type Tab = 'coats' | 'accessories' | 'home'
 type Game = {
   id: string
   name: string
@@ -50,7 +58,7 @@ const shop = {
   root: element('shop'),
   coins: element('shop-coins'),
   items: element('shop-items'),
-  tabs: { coats: element('tab-coats'), accessories: element('tab-accessories') }
+  tabs: { coats: element('tab-coats'), accessories: element('tab-accessories'), home: element('tab-home') }
 }
 const settings = { root: element('settings'), sound: element('sound-toggle') }
 const ctx = canvas.getContext('2d') ?? fail('Kittens Arcade needs a 2D canvas')
@@ -59,6 +67,7 @@ const view: View = { canvas, ctx, room: paintRoom(MIN_SIZE.width, MIN_SIZE.heigh
 const sound = new Sound()
 let wardrobe: Wardrobe = newWardrobe()
 let games: Game[] = []
+let home: Game | null = null
 let current: Game | null = null
 let tab: Tab = 'coats'
 let last = performance.now()
@@ -73,6 +82,15 @@ const arcade: Arcade = {
   },
   sound,
   look: () => wardrobe,
+  wardrobe: () => wardrobe,
+  saveWardrobe() {
+    keepWardrobe()
+    showCoins()
+  },
+  openShop(which) {
+    tab = which
+    openSheet(shop.root)
+  },
   earn(amount) {
     earn(wardrobe, amount)
     keepWardrobe()
@@ -91,7 +109,7 @@ function fail(message: string): never {
 function showLobby(): void {
   current?.screen.leave()
   current = null
-  closeSheets()
+  hideSheets()
   arcade.hud.pause.hidden = true
   arcade.hud.left.textContent = ''
   arcade.hud.center.textContent = ''
@@ -160,16 +178,24 @@ function sheetOpen(): boolean {
 function openSheet(sheet: HTMLElement): void {
   lobby.root.hidden = true
   sheet.hidden = false
+  stage.classList.add('sheet-open')
   if (sheet === shop.root) showShop()
   if (sheet === settings.root) showSettings()
   sheet.querySelector<HTMLButtonElement>('button')?.focus()
 }
 
-function closeSheets(): void {
-  if (!sheetOpen()) return
+function hideSheets(): void {
   shop.root.hidden = true
   settings.root.hidden = true
-  showLobby()
+  stage.classList.remove('sheet-open')
+}
+
+/** Back to where the sheet was opened from: the kitten's home, or the arcade. */
+function closeSheets(): void {
+  if (!sheetOpen()) return
+  hideSheets()
+  if (current) current.screen.resize()
+  else showLobby()
   stage.focus()
 }
 
@@ -178,8 +204,77 @@ function showShop(): void {
   for (const [name, tabButton] of Object.entries(shop.tabs)) {
     tabButton.setAttribute('aria-selected', String(name === tab))
   }
+  if (tab === 'home') {
+    shop.items.replaceChildren(...homeCards())
+    return
+  }
   const items: readonly (Coat | Accessory)[] = tab === 'coats' ? COATS : ACCESSORIES
   shop.items.replaceChildren(...items.map(itemCard))
+}
+
+/** The Home tab: treats first, then the furniture grouped by where it goes. */
+function homeCards(): HTMLElement[] {
+  const cards: HTMLElement[] = [treatsCard()]
+  for (const { kind, name } of KINDS) {
+    const heading = document.createElement('h3')
+    heading.className = 'shop-group'
+    heading.textContent = name
+    cards.push(heading, ...FURNITURE.filter((item) => item.kind === kind).map(furnitureCard))
+  }
+  return cards
+}
+
+function treatsCard(): HTMLElement {
+  const box = document.createElement('div')
+  box.className = 'item'
+  const preview = document.createElement('canvas')
+  preview.className = 'square'
+  paintPicture(preview, FURNITURE_PREVIEW, (picture) => drawPreview(picture, 'treats', FURNITURE_PREVIEW.width))
+  const name = document.createElement('span')
+  name.textContent = `Treats · you have ${wardrobe.home.treats}`
+  const buyOne = shopButton(`Buy 1 · ${TREAT_PRICE}`, 'treat', 'treats')
+  buyOne.disabled = wardrobe.coins < TREAT_PRICE
+  box.append(preview, name, buyOne)
+  return box
+}
+
+function furnitureCard(item: Furniture): HTMLElement {
+  const owned = wardrobe.owned.includes(item.id)
+  const spot = spotOf(wardrobe, item.id)
+  const box = document.createElement('div')
+  box.className = spot ? 'item worn' : 'item'
+  const preview = document.createElement('canvas')
+  preview.className = 'square'
+  paintPicture(preview, FURNITURE_PREVIEW, (picture) => drawPreview(picture, item.id, FURNITURE_PREVIEW.width))
+  const name = document.createElement('span')
+  name.textContent = item.name
+  const actions = document.createElement('div')
+  actions.className = 'pair'
+  if (!owned) {
+    const buyIt = shopButton(`Buy · ${item.price}`, 'buy', item.id)
+    buyIt.disabled = wardrobe.coins < item.price
+    if (buyIt.disabled) buyIt.title = `You need ${item.price - wardrobe.coins} more coins`
+    actions.append(buyIt)
+  } else if (item.kind === 'picture') {
+    for (const side of SPOTS_OF.picture) {
+      const label = `${spot === side ? '✓ ' : ''}${side === 'wallLeft' ? 'Left' : 'Right'}`
+      actions.append(shopButton(label, spot === side ? 'remove' : 'place', item.id, side))
+    }
+  } else {
+    actions.append(spot ? shopButton('Remove', 'remove', item.id, spot) : shopButton('Place', 'place', item.id))
+  }
+  box.append(preview, name, actions)
+  return box
+}
+
+function shopButton(label: string, action: string, id: string, spot?: Spot): HTMLButtonElement {
+  const made = document.createElement('button')
+  made.type = 'button'
+  made.textContent = label
+  made.dataset.action = action
+  made.dataset.id = id
+  if (spot) made.dataset.spot = spot
+  return made
 }
 
 function itemCard(item: Coat | Accessory): HTMLElement {
@@ -213,14 +308,21 @@ function itemCard(item: Coat | Accessory): HTMLElement {
   return box
 }
 
-function shopAction(action: string, id: string): void {
+function shopAction(action: string, id: string, spot?: Spot): void {
   if (action === 'buy') {
     if (!buy(wardrobe, id).ok) return
     sound.play('golden')
+  } else if (action === 'treat') {
+    if (!buyTreat(wardrobe)) return
+    sound.play('catch')
   } else if (action === 'wear') {
     wear(wardrobe, id)
   } else if (action === 'take-off') {
     takeOff(wardrobe, id)
+  } else if (action === 'place') {
+    place(wardrobe, id, spot)
+  } else if (action === 'remove' && spot) {
+    removeFrom(wardrobe, spot)
   } else {
     return
   }
@@ -286,9 +388,13 @@ function fit(): void {
     view.room = paintRoom(width, height)
   }
   for (const game of games) game.screen.resize()
+  if (current === home) home?.screen.resize()
 }
 
 arcade.hud.pause.addEventListener('click', () => current?.screen.pause())
+element('open-home').addEventListener('click', () => {
+  if (home) play(home)
+})
 element('open-shop').addEventListener('click', () => openSheet(shop.root))
 element('open-settings').addEventListener('click', () => openSheet(settings.root))
 settings.sound.addEventListener('click', toggleSound)
@@ -303,9 +409,15 @@ shop.tabs.accessories.addEventListener('click', () => {
   tab = 'accessories'
   showShop()
 })
+shop.tabs.home.addEventListener('click', () => {
+  tab = 'home'
+  showShop()
+})
 shop.items.addEventListener('click', (event) => {
   const target = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-id]')
-  if (target?.dataset.id && target.dataset.action) shopAction(target.dataset.action, target.dataset.id)
+  if (target?.dataset.id && target.dataset.action) {
+    shopAction(target.dataset.action, target.dataset.id, target.dataset.spot as Spot | undefined)
+  }
 })
 
 window.addEventListener('keydown', (event) => {
@@ -361,6 +473,7 @@ async function start(): Promise<void> {
       screen: mazeScreen(arcade, saved[MAZE_STORE])
     }
   ]
+  home = { id: 'home', name: 'Home', line: '', paint: () => undefined, screen: homeScreen(arcade) }
   fit()
   showCoins()
   showLobby()

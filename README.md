@@ -39,6 +39,14 @@ kitten are bright, what you have seen stays clearer, and it gets a little darker
 kitten runs it there. The clock starts with the first step, the maze hides while paused, and the three
 fastest times of each level are kept. A level is worth two coins per level number.
 
+## Your kitten's home
+
+**Home**, on the arcade's first screen, opens your kitten's room. The shop's Home tab sells what goes
+in it: pictures and a window for the wall, and a bed, a rug, a bowl, a plant or lamp, a scratcher and a
+toy for the floor, each in its own spot (two pictures share the wall, and swap when moved). Your
+kitten wanders around, naps on its bed and plays with its toy; click it to pet it. Treats cost five
+coins each: give one and it goes to its bowl to eat.
+
 ## Develop
 
 ```sh
@@ -56,9 +64,10 @@ No build step: Orca loads the TypeScript in `src/` as it is.
 | `src/catching/` | Catching Kittens: the rules (`engine.ts`), the room and what is drawn in it, and its screen. |
 | `src/pairs/` | Kitten Pairs: the deck and the rules (`engine.ts`), and its screen. |
 | `src/maze/` | Kitten Maze: the mazes and the rules (`engine.ts`), and its screen. |
+| `src/home/` | The kitten's home: the furniture and its spots (`catalog.ts`), its pixel art, and the room. |
 | `src/progress.ts`, `src/levels.ts` | Levels against the clock: which are open, their three fastest times, and their buttons and result card. |
 | `src/stopwatch.ts`, `src/random.ts` | The clock of a timed level, and the seeded random numbers behind decks and mazes. |
-| `src/shop.ts` | The coats and accessories, their prices, and buying and wearing them. |
+| `src/shop.ts` | Coins, coats, accessories, furniture and treats: buying, wearing and placing them. |
 | `src/sprites.ts`, `src/looks.ts` | The pixel art, drawn from text, and how each coat and accessory looks. |
 | `src/sound.ts` | Blips made with Web Audio. |
 

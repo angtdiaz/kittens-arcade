@@ -18,7 +18,9 @@ const CAT_HEAD: Sprite = [
 export const CAT = {
   walkA: [...CAT_HEAD, '...o.o...o.o....', '...w.w...w.w....'],
   walkB: [...CAT_HEAD, '....o.o.o.o.....', '....w.w.w.w.....'],
-  pounce: [...CAT_HEAD, '..oo.......oo...', '.ww.........ww..']
+  pounce: [...CAT_HEAD, '..oo.......oo...', '.ww.........ww..'],
+  /** Lying down, legs tucked under: for naps. */
+  loaf: [...CAT_HEAD]
 } as const satisfies Record<string, Sprite>
 
 export const MOUSE = {
@@ -63,7 +65,8 @@ const GLYPHS: Record<string, Sprite> = {
   '-': ['...', '...', '###', '...', '...'],
   '1': ['.#.', '##.', '.#.', '.#.', '###'],
   '5': ['###', '#..', '##.', '..#', '##.'],
-  '♥': ['.....', '##.##', '#####', '.###.', '..#..']
+  '♥': ['.....', '##.##', '#####', '.###.', '..#..'],
+  Z: ['###', '..#', '.#.', '#..', '###']
 }
 
 export function textWidth(text: string): number {

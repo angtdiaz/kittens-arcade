@@ -33,8 +33,8 @@ const ROOM = {
 
 const PLANK_HEIGHT = 7
 
-/** The room without anyone in it, painted once per size. */
-export function paintRoom(width: number, height: number): HTMLCanvasElement {
+/** The room without anyone in it, painted once per size; the kitten's home lays its own rug. */
+export function paintRoom(width: number, height: number, withRug = true): HTMLCanvasElement {
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
@@ -42,7 +42,7 @@ export function paintRoom(width: number, height: number): HTMLCanvasElement {
   if (!ctx) return canvas
   const floor = floorOf(width, height)
   paintFloor(ctx, width, height)
-  paintRug(ctx, floor.left, floor.top, floor.right, floor.bottom)
+  if (withRug) paintRug(ctx, floor.left, floor.top, floor.right, floor.bottom)
   paintWalls(ctx, width, height)
   return canvas
 }
