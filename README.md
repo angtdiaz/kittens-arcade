@@ -35,3 +35,5 @@ No build step: Orca loads the TypeScript in `src/` as it is.
 | `src/render.ts` | The room and everything drawn in it. |
 | `src/main.ts`, `src/panel.html` | The panel: the loop, input, the screens, the shop and settings, storage. |
 | `src/sound.ts` | Blips made with Web Audio. |
+
+[MIT licence](LICENSE).
