@@ -77,3 +77,31 @@ export function drawKitten(
     drawSprite(ctx, accessory.rows, accessory.palette, ax, y + accessory.dy, flip)
   }
 }
+
+/** The kitten's head alone, for places too small for the whole kitten: 7×6, or 5×4 below 9 pixels. */
+const HEADS: Record<'large' | 'small', Sprite> = {
+  large: ['o.....o', 'oo...oo', 'ooooooo', 'okoooko', 'oowpwoo', '.ooooo.'],
+  small: ['o...o', 'ooooo', 'okoko', '.opo.']
+}
+
+/** Draws the kitten's head centred in a square `room` pixels wide whose top-left corner is (x, y). */
+export function drawKittenHead(ctx: CanvasRenderingContext2D, look: Look, x: number, y: number, room: number): void {
+  const head = room < 9 ? HEADS.small : HEADS.large
+  drawCentred(ctx, head, (COAT_LOOKS[look.coat] ?? COAT_LOOKS.tabby).palette, x, y, room)
+}
+
+/** Draws `sprite` as large as fits, centred in a square `room` pixels wide. */
+export function drawCentred(
+  ctx: CanvasRenderingContext2D,
+  sprite: Sprite,
+  palette: Palette,
+  x: number,
+  y: number,
+  room: number
+): void {
+  const width = spriteWidth(sprite)
+  const scale = Math.max(1, Math.floor((room - 1) / Math.max(width, sprite.length)))
+  const left = x + Math.floor((room - width * scale) / 2)
+  const top = y + Math.floor((room - sprite.length * scale) / 2)
+  drawSprite(ctx, sprite, palette, left, top, false, scale)
+}

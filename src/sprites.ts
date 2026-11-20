@@ -35,14 +35,15 @@ export function spriteWidth(sprite: Sprite): number {
   return sprite[0]?.length ?? 0
 }
 
-/** Draws `sprite` with its top-left corner at (x, y), mirrored when `flip` is true. */
+/** Draws `sprite` with its top-left corner at (x, y), mirrored when `flip` is true, each pixel `scale` wide. */
 export function drawSprite(
   ctx: CanvasRenderingContext2D,
   sprite: Sprite,
   palette: Palette,
   x: number,
   y: number,
-  flip = false
+  flip = false,
+  scale = 1
 ): void {
   const width = spriteWidth(sprite)
   sprite.forEach((row, dy) => {
@@ -50,7 +51,8 @@ export function drawSprite(
       const colour = palette[row[dx]]
       if (!colour) continue
       ctx.fillStyle = colour
-      ctx.fillRect(Math.round(x + (flip ? width - 1 - dx : dx)), Math.round(y + dy), 1, 1)
+      const column = flip ? width - 1 - dx : dx
+      ctx.fillRect(Math.round(x + column * scale), Math.round(y + dy * scale), scale, scale)
     }
   })
 }

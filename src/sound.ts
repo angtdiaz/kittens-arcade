@@ -1,6 +1,6 @@
 // Little chiptune blips made on the spot with Web Audio: no sound files to ship.
 
-export type Cue = 'start' | 'catch' | 'golden' | 'escape' | 'over' | 'pounce'
+export type Cue = 'start' | 'catch' | 'golden' | 'escape' | 'over' | 'pounce' | 'flip' | 'win'
 
 type Note = { hz: number; ms: number; wave: OscillatorType }
 
@@ -24,7 +24,14 @@ const CUES: Record<Cue, readonly Note[]> = {
     { hz: 294, ms: 120, wave: 'triangle' },
     { hz: 196, ms: 260, wave: 'triangle' }
   ],
-  pounce: [{ hz: 330, ms: 40, wave: 'triangle' }]
+  pounce: [{ hz: 330, ms: 40, wave: 'triangle' }],
+  flip: [{ hz: 620, ms: 30, wave: 'triangle' }],
+  win: [
+    { hz: 523, ms: 80, wave: 'square' },
+    { hz: 659, ms: 80, wave: 'square' },
+    { hz: 784, ms: 80, wave: 'square' },
+    { hz: 1047, ms: 180, wave: 'square' }
+  ]
 }
 
 const VOLUME = 0.05

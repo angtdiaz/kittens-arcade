@@ -1,7 +1,7 @@
 import { RULES, floorOf, type Game, type Hole, type Mouse } from './engine'
-import { drawKitten } from './looks'
-import type { Look } from './shop'
-import { CAT, MOUSE, PALETTES, drawSprite, drawText, spriteWidth } from './sprites'
+import { drawKitten } from '../looks'
+import type { Look } from '../shop'
+import { CAT, MOUSE, PALETTES, drawSprite, drawText, spriteWidth } from '../sprites'
 
 /** The "+1" that floats up where a mouse was caught. */
 export type Floater = { x: number; y: number; text: string; age: number; golden: boolean }
@@ -175,4 +175,15 @@ function drawFloater(ctx: CanvasRenderingContext2D, floater: Floater): void {
   const rise = Math.round(floater.age * 14)
   const colour = floater.golden ? ROOM.goldenPoints : ROOM.points
   drawText(ctx, floater.text, Math.round(floater.x) - 4, Math.round(floater.y) - 10 - rise, colour)
+}
+
+/** The kitten after a mouse: the picture on the game's tile in the arcade, 41×20 room pixels. */
+export function paintCatchingArt(ctx: CanvasRenderingContext2D, look: Look): void {
+  ctx.fillStyle = ROOM.rug
+  ctx.fillRect(0, 0, 41, 20)
+  ctx.fillStyle = ROOM.shadow
+  ctx.fillRect(4, 17, 12, 2)
+  ctx.fillRect(28, 18, 7, 1)
+  drawKitten(ctx, CAT.walkA, look, 2, 7, false)
+  drawSprite(ctx, MOUSE.runA, PALETTES.mouse, 26, 12)
 }
