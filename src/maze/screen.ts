@@ -30,7 +30,7 @@ const HOW_TO_PLAY: readonly Rule[] = [
   ['🎯', 'Goal', 'Lead your kitten from the top-left corner to its fish in the bottom-right one.'],
   ['⏱️', 'How it ends', 'You cannot lose: it is you against the clock, which starts with your first step. Your three fastest times on each level are kept.'],
   ['🎮', 'Controls', 'Arrows or WASD take a step; hold them to keep walking. Click a square in line with the kitten to run there. P or Esc pauses, and the maze hides.'],
-  ['🌑', 'Harder', 'From level 4 some paths loop. From level 5 the lights go out and you only see around your kitten.'],
+  ['🌑', 'Harder', 'From level 4 some paths loop. From level 5 the lights are low: only the squares around your kitten are bright, and a little less each level.'],
   ['🪙', 'Coins', 'Two per level number: level 7 is worth 14. Finish a level to open the next one.']
 ]
 
@@ -56,16 +56,18 @@ const FISH: Record<'large' | 'small', Sprite> = {
 }
 
 const COLOURS = {
-  floor: '#241f3a',
-  dark: '#0f0c1a',
+  floor: { lit: '#2a2445', seen: '#211c38', dark: '#1a1630' },
+  wall: { lit: '#e6e0ff', seen: '#8f86c0' },
   trail: '#3d3560',
   trailSeen: '#2f2a4a',
-  wall: '#c9c3e6',
-  wallSeen: '#5a5185',
   fish: { c: '#4cc9f0', k: '#1b1b2b' }
 } as const
 
+/** The walls the kitten has not seen yet, a little darker on each of the dim levels. */
+const UNSEEN_WALLS: Record<number, string> = { 5: '#4f467f', 6: '#463e72', 7: '#3d3666' }
+
 type Grid = { left: number; top: number; cell: number }
+type Light = 'lit' | 'seen' | 'dark'
 
 export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
   const { view, hud, sound } = arcade
@@ -148,12 +150,13 @@ export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
     }
   }
 
-  /** In the dark levels, a cell is lit inside the kitten's light, dim once seen, and black before. */
+  /** On the dim levels the whole maze shows, faintly: bright inside the kitten's light, clearer once
+   *  seen, and darker on each level further from it. */
   function draw(of: Maze, look: Look): void {
     const { ctx } = view
     const { left, top, cell } = grid(of)
     const seen = new Set(of.seen)
-    const light = (index: number): 'lit' | 'seen' | 'dark' => {
+    const light = (index: number): Light => {
       if (inSight(of, { x: index % of.columns, y: Math.floor(index / of.columns) })) return 'lit'
       return seen.has(index) ? 'seen' : 'dark'
     }
@@ -161,12 +164,10 @@ export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
       x: left + (index % of.columns) * cell,
       y: top + Math.floor(index / of.columns) * cell
     })
-    ctx.fillStyle = COLOURS.floor
-    ctx.fillRect(left, top, of.columns * cell + 1, of.rows * cell + 1)
-    ctx.fillStyle = COLOURS.dark
+    const walls: Record<Light, string> = { ...COLOURS.wall, dark: UNSEEN_WALLS[of.level] ?? COLOURS.wall.seen }
     of.walls.forEach((_, index) => {
-      if (light(index) !== 'dark') return
       const { x, y } = corner(index)
+      ctx.fillStyle = COLOURS.floor[light(index)]
       ctx.fillRect(x, y, cell + 1, cell + 1)
     })
     for (const index of of.trail) {
@@ -174,16 +175,18 @@ export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
       ctx.fillStyle = light(index) === 'lit' ? COLOURS.trail : COLOURS.trailSeen
       ctx.fillRect(x + 1, y + 1, cell - 1, cell - 1)
     }
-    of.walls.forEach((walls, index) => {
-      const shown = light(index)
-      if (shown === 'dark') return
-      const { x, y } = corner(index)
-      ctx.fillStyle = shown === 'lit' ? COLOURS.wall : COLOURS.wallSeen
-      if (walls & WALL.north) ctx.fillRect(x, y, cell + 1, 1)
-      if (walls & WALL.west) ctx.fillRect(x, y, 1, cell + 1)
-      if (walls & WALL.east) ctx.fillRect(x + cell, y, 1, cell + 1)
-      if (walls & WALL.south) ctx.fillRect(x, y + cell, cell + 1, 1)
-    })
+    // Brighter walls last, so a wall shared with a darker cell shows lit.
+    for (const shown of ['dark', 'seen', 'lit'] as const) {
+      ctx.fillStyle = walls[shown]
+      of.walls.forEach((sides, index) => {
+        if (light(index) !== shown) return
+        const { x, y } = corner(index)
+        if (sides & WALL.north) ctx.fillRect(x, y, cell + 1, 1)
+        if (sides & WALL.west) ctx.fillRect(x, y, 1, cell + 1)
+        if (sides & WALL.east) ctx.fillRect(x + cell, y, 1, cell + 1)
+        if (sides & WALL.south) ctx.fillRect(x, y + cell, cell + 1, 1)
+      })
+    }
     const room = cell - 1
     const fish = room < 9 ? FISH.small : FISH.large
     drawCentred(ctx, fish, COLOURS.fish, left + of.goal.x * cell + 1, top + of.goal.y * cell + 1, room)
@@ -331,9 +334,9 @@ export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
 export function paintMazeArt(ctx: CanvasRenderingContext2D, look: Look): void {
   const maze = build(1)
   const cell = 6
-  ctx.fillStyle = COLOURS.floor
+  ctx.fillStyle = COLOURS.floor.lit
   ctx.fillRect(0, 0, 41, 20)
-  ctx.fillStyle = COLOURS.wall
+  ctx.fillStyle = COLOURS.wall.lit
   for (let y = 0; y < 3; y += 1) {
     for (let x = 0; x < 6; x += 1) {
       const walls = maze.walls[y * maze.columns + x]

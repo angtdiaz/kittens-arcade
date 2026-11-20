@@ -2,7 +2,7 @@
   "manifestVersion": 2,
   "id": "kittens-arcade",
   "name": "Kittens Arcade",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Pixel art games played by kittens, for the wait between agents: Catching Kittens (catch the mice before they get away), Kitten Pairs (find the matching kittens against the clock) and Kitten Maze (lead your kitten to its fish). Coins from every game buy coats, hats and collars in a shared shop.",
   "icon": "media/icon.png",
   "license": "MIT",
