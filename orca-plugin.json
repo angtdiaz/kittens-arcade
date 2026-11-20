@@ -1,0 +1,28 @@
+{
+  "manifestVersion": 2,
+  "id": "kittens-arcade",
+  "name": "Kittens Arcade",
+  "version": "0.1.0",
+  "description": "Pixel art games played by kittens, for the wait between agents. The first one, Catching Kittens: your kitten catches the mice that run between the holes in the wall, earns coins, and spends them on new coats, hats and collars.",
+  "icon": "media/icon.png",
+  "engines": {
+    "orca": ">=1.4.246"
+  },
+  "execution": "sandboxed-ui",
+  "pluginApi": 1,
+  "contributes": {
+    "panels": [
+      {
+        "id": "game",
+        "title": "Kittens Arcade",
+        "icon": "star",
+        "entry": "src/panel.html"
+      }
+    ]
+  },
+  "capabilities": [
+    {
+      "kind": "storage:own"
+    }
+  ]
+}
