@@ -1,5 +1,23 @@
 import { assert, test } from 'orca/testing'
-import { LEVELS, WALL, build, elapsed, isOpen, pause, resume, run, step, type Cell, type Direction, type Maze } from './engine'
+import {
+  DIFFICULTY,
+  LEVELS,
+  MAZES_VERSION,
+  WALL,
+  build,
+  elapsed,
+  inSight,
+  isOpen,
+  pause,
+  resume,
+  run,
+  shortestWay,
+  step,
+  upgradeProgress,
+  type Cell,
+  type Direction,
+  type Maze
+} from './engine'
 
 const DIRECTIONS: Direction[] = ['north', 'east', 'south', 'west']
 const DELTA: Record<Direction, Cell> = { north: { x: 0, y: -1 }, east: { x: 1, y: 0 }, south: { x: 0, y: 1 }, west: { x: -1, y: 0 } }
@@ -41,12 +59,68 @@ function openings(maze: Maze): number {
   return open
 }
 
-test('every level has a way from the kitten to its fish, and only one', () => {
-  LEVELS.forEach(([columns, rows], index) => {
+function share(maze: Maze, openSides: (open: number) => boolean): number {
+  const count = maze.walls.filter((walls) => openSides(DIRECTIONS.filter((side) => (walls & WALL[side]) === 0).length))
+  return count.length / maze.walls.length
+}
+
+test('every level has a way from the kitten to its fish', () => {
+  LEVELS.forEach((_, index) => {
     const maze = build(index + 1)
     assert.ok(solve(maze).length > 0, `Expected a way through level ${index + 1}`)
-    assert.equal(openings(maze), columns * rows - 1, `Expected level ${index + 1} to have no loops`)
+    assert.equal(solve(maze).length, shortestWay(maze))
   })
+})
+
+test('levels 1 to 3 have a single way through, and from level 4 the paths loop', () => {
+  LEVELS.forEach(([columns, rows], index) => {
+    const level = index + 1
+    const extra = openings(build(level)) - (columns * rows - 1)
+    if (level <= 3) assert.equal(extra, 0, `Expected level ${level} to have no loops`)
+    else assert.ok(extra > 0, `Expected level ${level} to have loops`)
+  })
+})
+
+test('levels 1 and 2 are still the mazes of version 0.2.0, so their times still count', () => {
+  const hex = (level: number) => build(level).walls.map((walls) => walls.toString(16)).join('')
+  assert.equal(hex(1), 'bd5153c53a92b96eaaac556ac13b9696c2c3ad5696c55547')
+  assert.equal(
+    hex(2),
+    'd53d515393c5383aa857aaaaac53aeaaa956c56aac55553ac395396abaa96c5686ec5153a9393c7ac6c6c556'
+  )
+})
+
+test('from level 3 there are more forks and dead ends, and the way out still winds', () => {
+  const easy = build(2)
+  for (let level = 3; level <= LEVELS.length; level += 1) {
+    const maze = build(level)
+    assert.ok(share(maze, (open) => open >= 3) > share(easy, (open) => open >= 3), `Expected more forks on ${level}`)
+    assert.ok(share(maze, (open) => open === 1) > share(easy, (open) => open === 1), `Expected more dead ends on ${level}`)
+    const straight = maze.columns + maze.rows - 2
+    assert.ok(shortestWay(maze) >= straight * 2.2, `Expected the way out of level ${level} to wind`)
+  }
+})
+
+test('from level 5 the kitten sees only around itself, a little less on each level', () => {
+  const sights = DIFFICULTY.map((difficulty) => difficulty.sight)
+  assert.deepEqual(sights.slice(0, 4), [null, null, null, null])
+  const dark = sights.slice(4) as number[]
+  assert.ok(dark.every((sight, index) => index === 0 || sight < dark[index - 1]), 'Expected less light each level')
+  const maze = build(5)
+  assert.ok(!inSight(maze, maze.goal), 'Expected the fish to be out of sight at the start')
+  const seenAtStart = [...maze.seen]
+  assert.ok(seenAtStart.every((index) => inSight(maze, { x: index % maze.columns, y: Math.floor(index / maze.columns) })))
+  for (const direction of solve(maze).slice(0, 8)) step(maze, direction, 0)
+  assert.ok(maze.seen.length > seenAtStart.length, 'Expected walking to light up more of the maze')
+  assert.ok(seenAtStart.every((index) => maze.seen.includes(index)), 'Expected what was seen to be remembered')
+})
+
+test('stored maze times from before version 2 are dropped, except on the unchanged levels', () => {
+  const old = { unlocked: 6, records: { '1': [{ ms: 9000, at: 1 }], '2': [{ ms: 20000, at: 1 }], '5': [{ ms: 50000, at: 1 }] } }
+  const upgraded = upgradeProgress(old)
+  assert.equal(upgraded.unlocked, 6)
+  assert.deepEqual(Object.keys(upgraded.records), ['1', '2'])
+  assert.deepEqual(upgradeProgress({ ...old, mazes: MAZES_VERSION }).records, old.records)
 })
 
 test('a level is always the same maze, and the levels grow', () => {

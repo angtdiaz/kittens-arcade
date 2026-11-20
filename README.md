@@ -28,10 +28,12 @@ three fastest times of each level are kept. Each pair is a coin.
 ## Kitten Maze
 
 Walk your kitten from the top-left corner to its fish in the bottom-right one. Seven levels, from
-6×8 to 18×26 squares, each always the same maze so its times can be compared. Arrows or WASD take
-a step (hold them to keep walking); a click on a square in line with the kitten runs it there. The
-clock starts with the first step, the maze hides while paused, and the three fastest times of each
-level are kept. A level is worth two coins per level number.
+6×8 to 18×26 squares, each always the same maze so its times can be compared, and each harder than
+the last: from level 3 the maze branches into more forks and dead ends, from level 4 some paths loop,
+and from level 5 the lights go out and you see only around your kitten (what you have seen stays
+dim). Arrows or WASD take a step (hold them to keep walking); a click on a square in line with the
+kitten runs it there. The clock starts with the first step, the maze hides while paused, and the three
+fastest times of each level are kept. A level is worth two coins per level number.
 
 ## Develop
 

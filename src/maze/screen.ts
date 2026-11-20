@@ -2,19 +2,22 @@ import { button, clock, element, paragraphs, type Arcade, type GameScreen } from
 import { floorOf } from '../catching/engine'
 import { levelButtons, resultLines, type Line } from '../levels'
 import { drawCentred, drawKittenHead } from '../looks'
-import { bestOf, canPlay, finishLevel, parseProgress, type Progress } from '../progress'
+import { bestOf, canPlay, finishLevel, type Progress } from '../progress'
 import type { Look } from '../shop'
 import type { Sprite } from '../sprites'
 import {
   LEVELS,
+  MAZES_VERSION,
   WALL,
   build,
   coinsFor,
   elapsed,
+  inSight,
   pause,
   resume,
   run,
   step,
+  upgradeProgress,
   type Cell,
   type Direction,
   type Maze,
@@ -46,8 +49,11 @@ const FISH: Record<'large' | 'small', Sprite> = {
 
 const COLOURS = {
   floor: '#241f3a',
+  dark: '#0f0c1a',
   trail: '#3d3560',
+  trailSeen: '#2f2a4a',
   wall: '#c9c3e6',
+  wallSeen: '#5a5185',
   fish: { c: '#4cc9f0', k: '#1b1b2b' }
 } as const
 
@@ -62,7 +68,7 @@ export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
     levels: element('maze-levels'),
     actions: element('maze-actions')
   }
-  const progress: Progress = parseProgress(saved, LEVELS.length)
+  const progress: Progress = upgradeProgress(saved)
   let maze: Maze | null = null
   let held: { code: string; direction: Direction; wait: number } | null = null
   let paused = false
@@ -90,7 +96,7 @@ export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
     hud.pause.hidden = true
     const ms = elapsed(done, performance.now())
     const place = finishLevel(progress, done.level, ms, Date.now(), LEVELS.length)
-    arcade.keep(MAZE_STORE, progress)
+    arcade.keep(MAZE_STORE, { ...progress, mazes: MAZES_VERSION })
     arcade.earn(coinsFor(done.level))
     window.setTimeout(() => {
       if (maze !== done) return
@@ -134,21 +140,37 @@ export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
     }
   }
 
+  /** In the dark levels, a cell is lit inside the kitten's light, dim once seen, and black before. */
   function draw(of: Maze, look: Look): void {
     const { ctx } = view
     const { left, top, cell } = grid(of)
+    const seen = new Set(of.seen)
+    const light = (index: number): 'lit' | 'seen' | 'dark' => {
+      if (inSight(of, { x: index % of.columns, y: Math.floor(index / of.columns) })) return 'lit'
+      return seen.has(index) ? 'seen' : 'dark'
+    }
+    const corner = (index: number) => ({
+      x: left + (index % of.columns) * cell,
+      y: top + Math.floor(index / of.columns) * cell
+    })
     ctx.fillStyle = COLOURS.floor
     ctx.fillRect(left, top, of.columns * cell + 1, of.rows * cell + 1)
-    ctx.fillStyle = COLOURS.trail
+    ctx.fillStyle = COLOURS.dark
+    of.walls.forEach((_, index) => {
+      if (light(index) !== 'dark') return
+      const { x, y } = corner(index)
+      ctx.fillRect(x, y, cell + 1, cell + 1)
+    })
     for (const index of of.trail) {
-      const x = index % of.columns
-      const y = Math.floor(index / of.columns)
-      ctx.fillRect(left + x * cell + 1, top + y * cell + 1, cell - 1, cell - 1)
+      const { x, y } = corner(index)
+      ctx.fillStyle = light(index) === 'lit' ? COLOURS.trail : COLOURS.trailSeen
+      ctx.fillRect(x + 1, y + 1, cell - 1, cell - 1)
     }
-    ctx.fillStyle = COLOURS.wall
     of.walls.forEach((walls, index) => {
-      const x = left + (index % of.columns) * cell
-      const y = top + Math.floor(index / of.columns) * cell
+      const shown = light(index)
+      if (shown === 'dark') return
+      const { x, y } = corner(index)
+      ctx.fillStyle = shown === 'lit' ? COLOURS.wall : COLOURS.wallSeen
       if (walls & WALL.north) ctx.fillRect(x, y, cell + 1, 1)
       if (walls & WALL.west) ctx.fillRect(x, y, 1, cell + 1)
       if (walls & WALL.east) ctx.fillRect(x + cell, y, 1, cell + 1)
@@ -189,6 +211,7 @@ export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
       [
         ['Walk your kitten from the top-left corner to its fish, as fast as you can.'],
         ['Arrows or WASD take a step; hold them to keep walking. Click a square in line with the kitten to run there.', 'soft'],
+        ['From level 4 the paths loop, and from level 5 the lights go out: you only see around your kitten.', 'soft'],
         ['The clock starts with your first step. Each level is always the same maze.', 'soft']
       ],
       [button('Arcade', arcade.home)],
