@@ -14,7 +14,8 @@ collars in the shop.
 
 - **Move:** the mouse pointer, or the arrow keys / WASD.
 - **Pounce:** click or Space, a short leap with a moment to cool down.
-- **Pause:** P or Esc. Clicking outside the panel pauses too. **Sound:** M, or Settings.
+- **Pause:** the II button at the top, P or Esc, in every game; the pause card leads back to the arcade.
+  Clicking outside the panel pauses too. **Sound:** M, or Settings.
 - Three mice getting away ends the run. Mice come out faster, and more at once, as it goes on.
 
 ## Kitten Pairs

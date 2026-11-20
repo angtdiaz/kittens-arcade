@@ -82,11 +82,13 @@ export function catchingScreen(arcade: Arcade, saved: unknown): GameScreen {
     paused = false
     carry = 0
     card.root.hidden = true
+    hud.pause.hidden = false
     showHud()
     sound.play('start')
   }
 
   function finish(score: number): void {
+    hud.pause.hidden = true
     sound.play('over')
     const record = score > best
     if (record) {
@@ -105,6 +107,7 @@ export function catchingScreen(arcade: Arcade, saved: unknown): GameScreen {
     if (game.phase !== 'playing' || paused === value) return
     paused = value
     keys.clear()
+    hud.pause.hidden = paused
     if (paused) showCard('Paused', 'Resume', [['Your mice are waiting.', 'soft']])
     else card.root.hidden = true
   }
@@ -156,11 +159,13 @@ export function catchingScreen(arcade: Arcade, saved: unknown): GameScreen {
   return {
     enter() {
       active = true
+      hud.pause.hidden = true
       showHud()
       showTitle()
     },
     leave() {
       active = false
+      hud.pause.hidden = true
       card.root.hidden = true
       keys.clear()
       // Leaving gives up the run; the coins it earned are kept.
@@ -201,6 +206,9 @@ export function catchingScreen(arcade: Arcade, saved: unknown): GameScreen {
       keys.delete(event.code)
     },
     blur() {
+      setPaused(true)
+    },
+    pause() {
       setPaused(true)
     },
     resize() {

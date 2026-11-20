@@ -11,7 +11,6 @@ import {
   build,
   coinsFor,
   elapsed,
-  isRunning,
   pause,
   resume,
   run,
@@ -75,6 +74,7 @@ export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
     paused = false
     held = null
     card.root.hidden = true
+    hud.pause.hidden = false
     showHud()
   }
 
@@ -87,6 +87,7 @@ export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
 
   function finish(done: Maze): void {
     held = null
+    hud.pause.hidden = true
     const ms = elapsed(done, performance.now())
     const place = finishLevel(progress, done.level, ms, Date.now(), LEVELS.length)
     arcade.keep(MAZE_STORE, progress)
@@ -101,20 +102,19 @@ export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
   function setPaused(value: boolean): void {
     if (!maze || maze.finished || paused === value) return
     const now = performance.now()
-    if (value) {
-      if (!isRunning(maze)) return
-      pause(maze, now)
-    } else {
-      resume(maze, now)
-    }
+    if (value) pause(maze, now)
+    else resume(maze, now)
     paused = value
     held = null
+    hud.pause.hidden = paused
     if (!paused) {
       card.root.hidden = true
       return
     }
-    showCard('Paused', [['The maze hides while the clock is stopped.', 'soft']], [
+    const note = maze.started ? 'The maze hides while the clock is stopped.' : 'The clock starts with your first step.'
+    showCard('Paused', [[note, 'soft']], [
       button('Resume', () => setPaused(false), 'primary'),
+      button('Levels', showMenu),
       button('Arcade', arcade.home)
     ])
   }
@@ -172,6 +172,7 @@ export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
   // ----- Screens -----
 
   function showMenu(): void {
+    hud.pause.hidden = true
     maze = null
     paused = false
     held = null
@@ -244,6 +245,7 @@ export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
     },
     leave() {
       active = false
+      hud.pause.hidden = true
       maze = null
       held = null
       card.root.hidden = true
@@ -286,6 +288,9 @@ export function mazeScreen(arcade: Arcade, saved: unknown): GameScreen {
       if (held?.code === event.code) held = null
     },
     blur() {
+      setPaused(true)
+    },
+    pause() {
       setPaused(true)
     },
     resize() {},

@@ -65,7 +65,12 @@ let last = performance.now()
 
 const arcade: Arcade = {
   view,
-  hud: { left: element('hud-left'), center: element('hud-center'), note: element('hud-note') },
+  hud: {
+    pause: element<HTMLButtonElement>('hud-pause'),
+    left: element('hud-left'),
+    center: element('hud-center'),
+    note: element('hud-note')
+  },
   sound,
   look: () => wardrobe,
   earn(amount) {
@@ -87,6 +92,7 @@ function showLobby(): void {
   current?.screen.leave()
   current = null
   closeSheets()
+  arcade.hud.pause.hidden = true
   arcade.hud.left.textContent = ''
   arcade.hud.center.textContent = ''
   arcade.hud.note.textContent = ''
@@ -282,6 +288,7 @@ function fit(): void {
   for (const game of games) game.screen.resize()
 }
 
+arcade.hud.pause.addEventListener('click', () => current?.screen.pause())
 element('open-shop').addEventListener('click', () => openSheet(shop.root))
 element('open-settings').addEventListener('click', () => openSheet(settings.root))
 settings.sound.addEventListener('click', toggleSound)

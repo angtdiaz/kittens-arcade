@@ -16,8 +16,9 @@ export type View = {
   cssPerPixel: number
 }
 
-/** The bar on the room's wall: big text on the left, something in the middle, a note under the coins. */
-export type Hud = { left: HTMLElement; center: HTMLElement; note: HTMLElement }
+/** The bar on the room's wall: the pause button and big text on the left, something in the middle, a note
+ *  under the coins. */
+export type Hud = { pause: HTMLButtonElement; left: HTMLElement; center: HTMLElement; note: HTMLElement }
 
 export type Arcade = {
   view: View
@@ -39,6 +40,8 @@ export type GameScreen = {
   keyUp?(event: KeyboardEvent): void
   /** Orca's window or another pane took the focus. */
   blur(): void
+  /** The pause button was pressed. */
+  pause(): void
   resize(): void
   /** One line for the game's tile in the arcade, such as the best score. */
   summary(): string

@@ -13,7 +13,6 @@ import {
   deal,
   elapsed,
   flip,
-  isRunning,
   pause,
   resume,
   totalPairs,
@@ -82,6 +81,7 @@ export function pairsScreen(arcade: Arcade, saved: unknown): GameScreen {
     area.hidden = false
     area.style.visibility = ''
     card.root.hidden = true
+    hud.pause.hidden = false
     showHud()
   }
 
@@ -108,6 +108,7 @@ export function pairsScreen(arcade: Arcade, saved: unknown): GameScreen {
   }
 
   function finish(done: Board): void {
+    hud.pause.hidden = true
     const ms = elapsed(done, performance.now())
     const place = finishLevel(progress, done.level, ms, Date.now(), LEVELS.length)
     arcade.keep(PAIRS_STORE, progress)
@@ -121,21 +122,20 @@ export function pairsScreen(arcade: Arcade, saved: unknown): GameScreen {
   function setPaused(value: boolean): void {
     if (!board || board.finished || paused === value) return
     const now = performance.now()
-    if (value) {
-      if (!isRunning(board)) return
-      pause(board, now)
-    } else {
-      resume(board, now)
-    }
+    if (value) pause(board, now)
+    else resume(board, now)
     paused = value
+    hud.pause.hidden = paused
     // The cards hide while the clock is stopped, so a pause is no time to study them.
     area.style.visibility = paused ? 'hidden' : ''
     if (!paused) {
       card.root.hidden = true
       return
     }
-    showCard('Paused', [['The cards are hidden while the clock is stopped.', 'soft']], [
+    const note = board.started ? 'The cards are hidden while the clock is stopped.' : 'The clock starts with your first card.'
+    showCard('Paused', [[note, 'soft']], [
       button('Resume', () => setPaused(false), 'primary'),
+      button('Levels', showMenu),
       button('Arcade', arcade.home)
     ])
   }
@@ -182,6 +182,7 @@ export function pairsScreen(arcade: Arcade, saved: unknown): GameScreen {
   }
 
   function showMenu(): void {
+    hud.pause.hidden = true
     clearTimeout(missTimer)
     board = null
     paused = false
@@ -254,6 +255,7 @@ export function pairsScreen(arcade: Arcade, saved: unknown): GameScreen {
       showMenu()
     },
     leave() {
+      hud.pause.hidden = true
       clearTimeout(missTimer)
       board = null
       area.hidden = true
@@ -277,6 +279,9 @@ export function pairsScreen(arcade: Arcade, saved: unknown): GameScreen {
       return false
     },
     blur() {
+      setPaused(true)
+    },
+    pause() {
       setPaused(true)
     },
     resize() {

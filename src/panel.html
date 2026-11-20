@@ -61,6 +61,17 @@
         pointer-events: none;
         text-shadow: 0 1px 0 #000;
       }
+      .hud-start {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .hud-pause {
+        pointer-events: auto;
+        padding: 2px 8px;
+        font-weight: 700;
+        letter-spacing: 1px;
+      }
       #hud-left {
         min-width: 3ch;
         font-size: 18px;
@@ -353,7 +364,10 @@
     <div id="stage" tabindex="0" aria-label="Kittens Arcade">
       <canvas id="room"></canvas>
       <div id="hud">
-        <span id="hud-left"></span>
+        <span class="hud-start">
+          <button id="hud-pause" class="hud-pause" type="button" aria-label="Pause" title="Pause (P or Esc)" hidden>II</button>
+          <span id="hud-left"></span>
+        </span>
         <span id="hud-center"></span>
         <span id="purse">
           <span class="coins"><span class="coin"></span><span id="coins">0</span></span>
