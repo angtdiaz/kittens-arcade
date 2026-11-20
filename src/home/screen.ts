@@ -4,6 +4,7 @@ import { paintRoom } from '../catching/render'
 import { drawKitten } from '../looks'
 import { giveTreat } from '../shop'
 import { CAT, drawText, spriteWidth } from '../sprites'
+import { treatAdvice } from './advice'
 import { drawFurniture, drawRug, sizeOf } from './art'
 import type { Spot } from './catalog'
 
@@ -220,15 +221,14 @@ export function homeScreen(arcade: Arcade): GameScreen {
   }
 
   function showBar(): void {
-    const { home } = arcade.wardrobe()
-    const bowl = placed('bowl')
-    bar.treat.textContent = !bowl ? 'Get a bowl' : home.treats > 0 ? `Give a treat (${home.treats})` : 'Buy treats'
+    const wardrobe = arcade.wardrobe()
+    const advice = treatAdvice(wardrobe)
+    bar.treat.textContent = advice.button
+    bar.hint.hidden = advice.hint === null
+    bar.hint.textContent = advice.hint ?? ''
     hud.left.textContent = ''
     hud.center.textContent = ''
-    hud.note.textContent = `Treats ${home.treats}`
-    const empty = Object.keys(home.placed).length === 0
-    bar.hint.hidden = !empty
-    bar.hint.textContent = 'Your kitten’s home is empty. Get furniture in the shop, under Home.'
+    hud.note.textContent = `Treats ${wardrobe.home.treats}`
   }
 
   function treat(): void {
